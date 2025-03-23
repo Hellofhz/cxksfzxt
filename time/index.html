@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>诚信考试辅助系统-实时时间</title>
+	<link rel="shortcut icon" href="../favicon.ico">
+	<link href="https://fonts.googleapis.com/css?family=Roboto:300,400,500&display=swap" rel="stylesheet">
+	<link href="https://fonts.googleapis.com/css?family=DM+Sans|Inter|Space+Mono|Work+Sans|Libre+Franklin&display=swap" rel="stylesheet">
+	<style>
+		/* 基础样式 */
+		body {
+			font-family: 'Segoe UI', Arial, sans-serif;
+			margin: 0;
+			padding: 20px;
+			background: url('../background.jpg') no-repeat center center fixed;
+			background-size: cover;
+			color: #ecf0f1;
+			display: flex;
+			justify-content: center;
+			align-items: center;
+			height: 100vh;
+			background-color: #2c3e50;
+		}
+
+		.container {
+			text-align: center;
+			background: rgba(255, 255, 255, 0);
+			padding: 30px;
+			animation: fadeIn 2s ease-in-out;
+		}
+
+		.time {
+			font-size: 10rem;
+			margin: 0;
+			color: #ecf0f1;
+			font-weight: 700;
+			text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+			animation: glow 1s ease-in-out infinite alternate;
+		}
+
+		.text {
+			font-size: 1.5rem;
+			margin-bottom: 20px;
+			color: #bdc3c7;
+		}
+
+		.btn {
+			padding: 10px 25px;
+			margin: 10px;
+			border: none;
+			border-radius: 8px;
+			cursor: pointer;
+			transition: all 0.3s ease;
+			font-weight: 500;
+			background: linear-gradient(135deg, #3498db, #2980b9);
+			color: white;
+			box-shadow: 0 4px 12px rgba(52, 152, 219, 0.25);
+		}
+
+		.btn:hover {
+			transform: translateY(-1px);
+			box-shadow: 0 6px 16px rgba(52, 152, 219, 0.35);
+		}
+
+		.controls {
+			margin-top: 30px;
+		}
+
+		.btn.fullscreen {
+			background: linear-gradient(135deg, #e74c3c, #c0392b);
+			color: #fff;
+		}
+
+		/* 动画效果 */
+		@keyframes fadeIn {
+			from {
+				opacity: 0;
+			}
+
+			to {
+				opacity: 1;
+			}
+		}
+
+		@keyframes glow {
+			from {
+				text-shadow: 0 0 10px #222;
+			}
+
+			to {
+				text-shadow: 0 0 20px #000;
+			}
+		}
+	</style>
+</head>
+
+<body>
+	<div class="container">
+		<div class="text">当前时间：</div>
+		<div class="time" id="time"></div>
+		<div class="controls">
+			<select id="fontSelector" class="btn">
+				<!-- 新增的Google字体选项 -->
+				<option value="Roboto">Roboto（在线）</option>
+				<option value="DM Sans">DM Sans（在线）</option>
+				<option value="Inter">Inter（在线）</option>
+				<option value="Space Mono">Space Mono（在线）</option>
+				<option value="Work Sans">Work Sans（在线）</option>
+				<option value="Libre Franklin">Libre Franklin（在线）</option>
+				<option value="微软雅黑">微软雅黑</option>
+				<option value="黑体">黑体</option>
+				<option value="宋体">宋体</option>
+			</select>
+			<button class="btn" onclick="changeFontFamily()">更改字体</button>
+			<button class="btn" onclick="changeFontSize(-5)">减小字号</button>
+			<button class="btn" onclick="changeFontSize(5)">增大字号</button>
+			<button class="btn fullscreen" onclick="toggleFullScreen()">全屏/还原</button>
+		</div>
+	</div>
+
+	<script>
+		setInterval(() => {
+			const date = new Date();
+			const time = date.toLocaleTimeString('zh-CN', {
+				hour12: false
+			});
+			document.getElementById('time').textContent = time;
+		}, 1000);
+
+		function changeFontSize(change) {
+			const elements = document.querySelectorAll('.time');
+			elements.forEach(element => {
+				const currentSize = parseFloat(window.getComputedStyle(element).fontSize);
+				element.style.fontSize = `${currentSize + change}px`;
+			});
+		}
+
+		function changeFontFamily() {
+			const selectedFont = document.getElementById('fontSelector').value;
+			const elements = document.querySelectorAll('.time, .text');
+			elements.forEach(element => {
+				element.style.fontFamily = selectedFont;
+			});
+		}
+
+		function toggleFullScreen() {
+			if (!document.fullscreenElement) {
+				document.documentElement.requestFullscreen();
+			} else {
+				if (document.exitFullscreen) {
+					document.exitFullscreen();
+				}
+			}
+		}
+	</script>
+</body>
+
+</html>
