@@ -31,9 +31,9 @@
             "end": "2025-03-14T17:00:00"
         }
     ],
-    "examName": "考试看板—广播适配",
-    "message": "1111111",
-    "room": "剩余时间",
+    "examName": "诚信考试辅助系统-考试广播",
+    "message": "XX中学2024-2025年度下学期开学考",
+    "room": "XX中学",
     "reminders": [
         {
             "condition": "start",
@@ -41,14 +41,14 @@
             "audio": "考试开始"
         },
         {
-            "condition": "end",
-            "time": 0,
-            "audio": "考试结束"
-        },
-        {
             "condition": "beforeEnd",
             "time": "15",
             "audio": "距离结束还有15分钟"
+        },
+        {
+            "condition": "end",
+            "time": 0,
+            "audio": "考试结束"
         }
     ]
 }
