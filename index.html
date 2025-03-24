@@ -19,12 +19,13 @@
             color: #fff;
             background-color: rgba(0, 0, 0, 0.5); /* 添加半透明背景 */
             backdrop-filter: blur(5px); /* 添加背景模糊效果 */
+            flex-direction: column; /* 修改为竖排布局 */
         }
         h1 {
             color: #fff;
             font-size: 48px;
             text-align: center;
-            margin-bottom: 30px;
+            margin-bottom: 10px; /* 调整间距 */
             animation: fadeInUp 1s ease-in-out;
         }
         ul {
@@ -32,9 +33,12 @@
             padding: 0;
             margin: 0;
             animation: fadeInUp 1s ease-in-out;
+            display: flex;
+            flex-direction: column; /* 修改为竖排布局 */
+            align-items: center; /* 居中对齐 */
         }
         li {
-            margin-bottom: 30px;
+            margin-bottom: 10px; /* 调整间距 */
         }
         a {
             color: #fff;
@@ -45,7 +49,7 @@
             border-radius: 8px;
             background-color: rgba(255, 255, 255, 0.1);
             transition: all 0.3s ease;
-            display: inline-block;
+            display: block; /* 修改为块级元素 */
         }
         a:hover {
             background-color: rgba(255, 255, 255, 0.3);
@@ -75,16 +79,21 @@
     </style>
 </head>
 <body>
-    <h1>选择版本：</h1>
+    <h1>欢迎使用诚信考试辅助系统</h1>
     <ul>
-        <li><a href="./time/">电子钟表</a></li>
-        <li><a href="./exam/">考试看板</a></li>
-        <li><a href="./notification/">考试广播</a></li>
+        <li><a href="#" onclick="startExam()">开始考试</a></li>
     </ul>
 
     <!-- 添加GitHub图标跳转项目地址 -->
     <a href="https://github.com/ExamAware/ExamSchedule" target="_blank" style="position: absolute; top: 10px; right: 10px; z-index: 1000;">
         <img src="./github-icon.png" alt="GitHub" style="width: 30px; height: 30px;" title="在GitHub上查看源代码">
     </a>
+
+    <script>
+        function startExam() {
+            window.open('./exam/', '_blank');
+            window.location.href = './notification/';
+        }
+    </script>
 </body>
 </html>
