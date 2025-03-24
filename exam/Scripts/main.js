@@ -14,6 +14,9 @@ document.addEventListener("DOMContentLoaded", () => {
             errorSystem.show('全屏切换失败: ' + e.message);
         }
     });
+
+    // 页面加载完成后自动点击全屏按钮
+    fullscreenBtn.click();
 });
 
 // 页面加载完成后自动全屏
