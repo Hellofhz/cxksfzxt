@@ -32,5 +32,7 @@ window.onload = function() {
             document.documentElement.msRequestFullscreen();
         }
     }
-    enterFullScreen();
+
+    // 延迟执行以确保在 浏览器 中生效
+    setTimeout(enterFullScreen, 1000);
 };
