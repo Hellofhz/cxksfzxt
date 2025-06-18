@@ -22,9 +22,9 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     // 更新显示内容
-    function updateDisplay(isExamTime) {
+    function updateDisplay(isExamTimeOrSoon) {
         if (autoToggle) {
-            paperInfoElem.style.display = isExamTime ? "block" : "none";
+            paperInfoElem.style.display = isExamTimeOrSoon ? "block" : "none";
         }
     }
 
@@ -36,12 +36,51 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 
+    function getQueryParam(name) {
+        const url = window.location.href;
+        name = name.replace(/[[]]/g, "\\$&");
+        const regex = new RegExp("[?&]" + name + "(=([^&#]*)|&|#|$)");
+        const results = regex.exec(url);
+        if (!results) return null;
+        if (!results[2]) return '';
+        return decodeURIComponent(results[2].replace(/\+/g, " "));
+    }
+
     function fetchData() {
+        // 新增：支持通过url参数指定配置文件
+        const configUrl = getQueryParam('configUrl');
+        if (configUrl) {
+            // 只从指定url拉取配置，不读取本地和默认
+            return fetch(configUrl, { cache: "no-store" })
+                .then(response => {
+                    if (!response.ok) throw new Error('配置文件加载失败');
+                    return response.json();
+                })
+                .then(data => {
+                    window.examConfigData = data;
+                    // 同步提醒设置
+                    if (data.examReminders && Array.isArray(data.examReminders)) {
+                        setCookie("examReminders", encodeURIComponent(JSON.stringify(data.examReminders)), 365);
+                    }
+                    displayExamInfo(data);
+                    updateCurrentTime();
+                    updateExamInfo(data);
+                    setInterval(() => updateCurrentTime(), 1000);
+                    setInterval(() => updateExamInfo(data), 1000);
+                })
+                .catch(error => errorSystem.show('获取考试数据失败: ' + error.message));
+        }
+
         // 优先使用本地配置
         const localConfig = localStorage.getItem('localExamConfig');
         if (localConfig) {
             try {
                 const data = JSON.parse(localConfig);
+                window.examConfigData = data; // 暴露全局变量供提醒队列使用
+                // 同步提醒设置
+                if (data.examReminders && Array.isArray(data.examReminders)) {
+                    setCookie("examReminders", encodeURIComponent(JSON.stringify(data.examReminders)), 365);
+                }
                 displayExamInfo(data);
                 updateCurrentTime();
                 updateExamInfo(data);
@@ -58,6 +97,11 @@ document.addEventListener("DOMContentLoaded", () => {
         return fetch('exam_config.json', { cache: "no-store" })
             .then(response => response.json())
             .then(data => {
+                window.examConfigData = data; // 暴露全局变量供提醒队列使用
+                // 同步提醒设置
+                if (data.examReminders && Array.isArray(data.examReminders)) {
+                    setCookie("examReminders", encodeURIComponent(JSON.stringify(data.examReminders)), 365);
+                }
                 displayExamInfo(data);
                 updateCurrentTime();
                 updateExamInfo(data);
@@ -186,6 +230,7 @@ document.addEventListener("DOMContentLoaded", () => {
                         statusElem.style.color = "#5ba838";
                     }
                 }
+                updateDisplay(true); // 进行中时显示
             } else {
                 updateDisplay(false);
                 if (lastExam && now < new Date(lastExam.end).getTime() + 60000) {
@@ -196,6 +241,7 @@ document.addEventListener("DOMContentLoaded", () => {
                         statusElem.textContent = "状态: 已结束";
                         statusElem.style.color = "red";
                     }
+                    updateDisplay(false);
                 } else if (nextExam) {
                     const timeUntilStart = ((new Date(nextExam.start).getTime() - now.getTime()) / 1000) + 1;
                     const remainingHours = Math.floor(timeUntilStart / 3600);
@@ -215,12 +261,14 @@ document.addEventListener("DOMContentLoaded", () => {
                         remainingTimeElem.style.fontWeight = "bold";
                         statusElem.textContent = "状态: 即将开始";
                         statusElem.style.color = "#DBA014";
+                        updateDisplay(true); // 即将开始时也显示
                     } else {
                         currentSubjectElem.textContent = `下一场科目: ${nextExam.name}`;
                         remainingTimeElem.textContent = "";
                         statusElem.textContent = "状态: 未开始";
                         remainingTimeElem.style.fontWeight = "normal";
                         statusElem.style.color = "#EAEE5B";
+                        updateDisplay(false);
                     }
 
                     examTimingElem.textContent = `起止时间: ${formatTimeWithoutSeconds(new Date(nextExam.start).toLocaleTimeString('zh-CN', { hour12: false }))} - ${formatTimeWithoutSeconds(new Date(nextExam.end).toLocaleTimeString('zh-CN', { hour12: false }))}`;
@@ -236,6 +284,7 @@ document.addEventListener("DOMContentLoaded", () => {
                         statusElem.textContent = " ";
                         statusElem.style.color = "#000000";
                     }
+                    updateDisplay(false);
                 }
             }
 
@@ -365,6 +414,27 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     loadPaperInfo();
+
+    function updatePaperCountPanelPosition() {
+        const pos = getCookie("paperCountPosition") || "right-bottom";
+        const panel = document.getElementById("paper-count-panel");
+        const leftInfo = document.getElementById("paper-info");
+        const rightColumn = document.querySelector(".right-column");
+        if (!panel) return;
+        if (pos === "left-info" && leftInfo) {
+            leftInfo.appendChild(panel);
+            panel.style.position = "static";
+            panel.style.marginTop = "16px";
+        } else if (pos === "right-bottom" && rightColumn) {
+            rightColumn.appendChild(panel);
+            panel.style.position = "";
+            panel.style.marginTop = "32px";
+        }
+    }
+    updatePaperCountPanelPosition();
+
+    // 监听设置变更（需在settings.js中触发事件）
+    window.addEventListener("paperCountPositionChanged", updatePaperCountPanelPosition);
 
     fetchData();
 });

@@ -13,6 +13,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const clearConfigBtn = document.getElementById("clear-config-btn");
     const themeSelect = document.getElementById("theme-select");
     const autoToggle = document.getElementById("auto-toggle");
+    const paperCountPositionSelect = document.getElementById("paper-count-position");
 
     let offsetTime = getCookie("offsetTime") || 0;
     let room = getCookie("room") || "";
@@ -20,7 +21,28 @@ document.addEventListener("DOMContentLoaded", () => {
     let currentTheme = getCookie("currentTheme") || "ealg";
     let theme = getCookie("theme") || "dark";
     let isAutoToggle = getCookie("autoToggle") || false;
+    let paperCountPosition = getCookie("paperCountPosition") || "right-bottom";
     let themeConfig = [];
+
+    // 新增：检测url参数
+    function getQueryParam(name) {
+        const url = window.location.href;
+        name = name.replace(/[[]]/g, "\\$&");
+        const regex = new RegExp("[?&]" + name + "(=([^&#]*)|&|#|$)");
+        const results = regex.exec(url);
+        if (!results) return null;
+        if (!results[2]) return '';
+        return decodeURIComponent(results[2].replace(/\+/g, " "));
+    }
+    const configUrl = getQueryParam('configUrl');
+    if (configUrl) {
+        // 禁用本地配置相关控件
+        if (configFileInput) configFileInput.disabled = true;
+        if (clearConfigBtn) clearConfigBtn.disabled = true;
+        // 隐藏或禁用相关区域
+        const configFileContainer = document.querySelector('.config-file-container');
+        if (configFileContainer) configFileContainer.style.opacity = 0.5;
+    }
 
     offsetTime = parseInt(offsetTime);
     roomElem.textContent = room;
@@ -54,12 +76,18 @@ document.addEventListener("DOMContentLoaded", () => {
         themeLink.href = `Styles/${themePath}/${isDark ? 'dark' : 'light'}.css`;
     }
 
+    // 初始化下拉框
+    if (paperCountPositionSelect) {
+        paperCountPositionSelect.value = paperCountPosition;
+    }
+
     settingsBtn.addEventListener("click", () => {
         try {
             offsetTimeInput.value = offsetTime;
             roomInput.value = room;
             zoomInput.value = zoomLevel;
             settingsModal.style.display = "block";
+            if (paperCountPositionSelect) paperCountPositionSelect.value = paperCountPosition;
         } catch (e) {
             errorSystem.show('打开设置失败: ' + e.message);
         }
@@ -85,12 +113,14 @@ document.addEventListener("DOMContentLoaded", () => {
             theme = themeToggle.checked ? "light" : "dark";
             currentTheme = themeSelect.value;
             isAutoToggle = autoToggle.checked;
+            paperCountPosition = paperCountPositionSelect.value;
             setCookie("offsetTime", offsetTime, 365);
             setCookie("room", room, 365);
             setCookie("zoomLevel", zoomLevel, 365);
             setCookie("theme", theme, 365);
             setCookie("currentTheme", currentTheme, 365);
             setCookie("autoToggle", isAutoToggle, 365);
+            setCookie("paperCountPosition", paperCountPosition, 365);
             roomElem.textContent = room;
             document.body.style.zoom = zoomLevel;
             updateThemeLink();
@@ -101,6 +131,8 @@ document.addEventListener("DOMContentLoaded", () => {
             }, 300);
             // 立即生效时间偏移
             location.reload();
+            // 通知 examInfo.js 更新数量控制区位置
+            window.dispatchEvent(new Event("paperCountPositionChanged"));
         } catch (e) {
             errorSystem.show('保存设置失败: ' + e.message);
         }
@@ -116,6 +148,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     configFileInput.addEventListener("change", (event) => {
+        if (configUrl) return; // 禁止导入
         try {
             const file = event.target.files[0];
             if (!file) return;
@@ -140,7 +173,12 @@ document.addEventListener("DOMContentLoaded", () => {
                             throw new Error("无效的日期格式");
                         }
                     });
-                    
+
+                    // 导入提醒设置
+                    if (config.examReminders && Array.isArray(config.examReminders)) {
+                        setCookie("examReminders", encodeURIComponent(JSON.stringify(config.examReminders)), 365);
+                    }
+
                     // 保存配置到本地存储
                     localStorage.setItem('localExamConfig', JSON.stringify(config));
                     errorSystem.show('配置文件已加载，将在下次启动时生效');
@@ -156,6 +194,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     clearConfigBtn.addEventListener("click", () => {
+        if (configUrl) return; // 禁止清除
         try {
             if (confirm("确定要清除本地配置吗？这将恢复使用默认配置文件。")) {
                 localStorage.removeItem('localExamConfig');
@@ -171,5 +210,50 @@ document.addEventListener("DOMContentLoaded", () => {
         document.body.style.zoom = zoomLevel;
     } catch (e) {
         errorSystem.show('初始化缩放失败: ' + e.message);
+    }
+
+    // 新增：点击弹窗外区域自动保存并关闭
+    window.addEventListener("click", function(event) {
+        if (settingsModal.style.display === "block" && event.target === settingsModal) {
+            // 自动保存设置
+            try {
+                offsetTime = parseInt(offsetTimeInput.value);
+                room = roomInput.value;
+                zoomLevel = parseFloat(zoomInput.value);
+                theme = themeToggle.checked ? "light" : "dark";
+                currentTheme = themeSelect.value;
+                isAutoToggle = autoToggle.checked;
+                paperCountPosition = paperCountPositionSelect.value;
+                setCookie("offsetTime", offsetTime, 365);
+                setCookie("room", room, 365);
+                setCookie("zoomLevel", zoomLevel, 365);
+                setCookie("theme", theme, 365);
+                setCookie("currentTheme", currentTheme, 365);
+                setCookie("autoToggle", isAutoToggle, 365);
+                setCookie("paperCountPosition", paperCountPosition, 365);
+                roomElem.textContent = room;
+                document.body.style.zoom = zoomLevel;
+                updateThemeLink();
+                settingsModal.classList.add("fade-out");
+                setTimeout(() => {
+                    settingsModal.style.display = "none";
+                    settingsModal.classList.remove("fade-out");
+                }, 300);
+                // 立即生效时间偏移
+                location.reload();
+                // 通知 examInfo.js 更新数量控制区位置
+                window.dispatchEvent(new Event("paperCountPositionChanged"));
+            } catch (e) {
+                errorSystem.show('保存设置失败: ' + e.message);
+            }
+        }
+    });
+
+    if (paperCountPositionSelect) {
+        paperCountPositionSelect.addEventListener("change", () => {
+            paperCountPosition = paperCountPositionSelect.value;
+            setCookie("paperCountPosition", paperCountPosition, 365);
+            window.dispatchEvent(new Event("paperCountPositionChanged"));
+        });
     }
 });
